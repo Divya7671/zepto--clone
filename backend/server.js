@@ -1,26 +1,26 @@
+require("dotenv").config();
+
 const express = require("express");
 const mysql = require("mysql2");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const path = require("path");
 const axios = require("axios");
 const bcrypt = require("bcrypt");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // ✅ Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, "../frontend")));
 
 // ✅ MySQL Connection
 const db = mysql.createConnection({
-  host: process.env.DB_HOST || "chaitu-rds.ckdi02am6h3i.us-east-1.rds.amazonaws.com",
-  user: process.env.DB_USER || "chaitu",
-  password: process.env.DB_PASS || "chaitu2306",
-  database: process.env.DB_NAME || "zepto"
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
 });
 
 db.connect((err) => {
@@ -31,9 +31,14 @@ db.connect((err) => {
   }
 });
 
-// ✅ Serve signup page (optional)
+// ✅ Health check route for ALB
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// ✅ Basic root response
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/signup.html"));
+  res.send("🚀 Zepto Backend is running!");
 });
 
 // ✅ Signup API
@@ -90,6 +95,7 @@ app.post("/login", (req, res) => {
   });
 });
 
+// ✅ Contact form
 app.post("/contact", (req, res) => {
   console.log("📨 Contact form submission received:", req.body);
   const { name, email, message } = req.body;
@@ -108,7 +114,7 @@ app.post("/contact", (req, res) => {
   });
 });
 
-// ✅ Place Order API
+// ✅ Order API
 app.post("/order/place-order", (req, res) => {
   const { items, total, user } = req.body;
   if (!Array.isArray(items) || items.length === 0 || !total) {
@@ -132,7 +138,7 @@ app.post("/order/place-order", (req, res) => {
   });
 });
 
-// ✅ Internal test endpoint
+// ✅ Internal test route
 app.get("/call-private", async (req, res) => {
   try {
     const response = await axios.get("http://10.0.3.14:3000/ping");
@@ -143,7 +149,7 @@ app.get("/call-private", async (req, res) => {
   }
 });
 
-// ✅ Start the server
+// ✅ Start server
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(🚀 Server running on http://0.0.0.0:${PORT});
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
 });
